@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IronLog — Gym Membership</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12151B;
+    --bg-elev:#171B22;
+    --card:#1D222C;
+    --card-2:#242A35;
+    --ink:#F4F6F9;
+    --ink-soft:#98A2B3;
+    --ink-faint:#5A6472;
+    --line:#2A303C;
+    --accent:#FF5A3C;
+    --accent-2:#FFB020;
+    --accent-soft:#3A2419;
+    --accent-grad:linear-gradient(135deg,#FF7A50,#FF5A3C);
+    --good:#2FD98A;
+    --good-soft:#153027;
+    --warn:#FFB020;
+    --warn-soft:#332614;
+    --bad:#FF4D6D;
+    --bad-soft:#33161D;
+    --radius-lg:22px;
+    --radius-md:16px;
+    --radius-sm:11px;
+    --shadow: 0 10px 28px rgba(0,0,0,0.32), 0 2px 8px rgba(0,0,0,0.24);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:#05060A;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    width:100%; max-width:440px;
+    background:var(--bg);
+    min-height:100vh;
+    display:flex; flex-direction:column;
+    position:relative;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.disp{ font-family:'Oswald',sans-serif; letter-spacing:0.2px; }
+  .mono{ font-family:'JetBrains Mono',monospace; }
+
+  header{
+    background:radial-gradient(120% 140% at 15% 0%,#22181A 0%,#171A20 45%,#12151B 100%);
+    color:#fff; padding:20px 20px 18px; position:sticky; top:0; z-index:20;
+    border-bottom:1px solid var(--line);
+  }
+  .top-row{ display:flex; align-items:center; justify-content:space-between; }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand .mark{
+    width:34px; height:34px; border-radius:10px;
+    background:var(--accent-grad);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Oswald',sans-serif; font-weight:700; font-size:15px; color:#fff;
+    box-shadow:0 6px 16px rgba(255,90,60,0.35);
+  }
+  .brand .name{ font-family:'Oswald',sans-serif; font-weight:600; font-size:18px; letter-spacing:0.3px; }
+  .avatar-sm{
+    width:34px; height:34px; border-radius:50%; background:var(--card-2);
+    display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff;
+    border:1px solid var(--line);
+  }
+  .greet{ font-size:12.5px; color:var(--ink-soft); margin:16px 0 2px; }
+  .greet-name{ font-family:'Oswald',sans-serif; font-size:21px; font-weight:600; color:#fff; margin:0; }
+
+  .page{ display:none; padding:18px 18px 100px; flex:1; }
+  .page.active{ display:block; animation:fadein .28s ease; }
+  @keyframes fadein{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:-30px; margin-bottom:18px; position:relative; z-index:10; }
+  .stat-card{ background:var(--card); border-radius:var(--radius-md); padding:14px 16px; box-shadow:var(--shadow); border:1px solid var(--line); }
+  .stat-card .slabel{ font-size:11px; color:var(--ink-soft); font-weight:600; }
+  .stat-card .sval{ font-size:20px; font-weight:700; color:var(--ink); margin-top:4px; font-family:'JetBrains Mono',monospace;}
+  .stat-card .strend{ font-size:10.5px; margin-top:3px; font-weight:600; }
+  .up{ color:var(--good); }
+  .down{ color:var(--bad); }
+
+  .section-head{ display:flex; align-items:center; justify-content:space-between; margin:20px 0 12px; }
+  .section-head h3{ font-size:15px; font-weight:600; color:var(--ink); margin:0; text-transform:uppercase; letter-spacing:0.5px; }
+  .section-head a{ font-size:12px; color:var(--accent); font-weight:600; text-decoration:none; }
+
+  .card{ background:var(--card); border-radius:var(--radius-md); box-shadow:var(--shadow); padding:14px 16px; margin-bottom:10px; border:1px solid var(--line); }
+  .card:active{ transform:scale(0.99); }
+
+  /* ---- status ring avatar (signature element) ---- */
+  .ring{
+    width:52px; height:52px; border-radius:50%; padding:3px; flex-shrink:0;
+    background: conic-gradient(var(--ring-color, var(--good)) var(--pct,90%), var(--line) 0);
+  }
+  .ring-inner{ width:100%; height:100%; border-radius:50%; background:var(--card); display:flex; align-items:center; justify-content:center; }
+  .avatar{
+    width:42px; height:42px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:#fff;
+  }
+  .ring.lg{ width:76px; height:76px; padding:4px; }
+  .ring.lg .avatar{ width:68px; height:68px; font-size:20px; }
+
+  .member-row{ display:flex; align-items:center; gap:12px; cursor:pointer; }
+  .member-info{ flex:1; min-width:0; }
+  .member-info .mname{ font-size:14px; font-weight:700; color:var(--ink); margin:0; }
+  .member-info .mmeta{ font-size:11.5px; color:var(--ink-soft); margin:3px 0 0; display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+  .member-info .mmeta .dot{ width:3px; height:3px; border-radius:50%; background:var(--ink-faint); }
+  .chevron{ color:var(--ink-faint); flex-shrink:0; }
+  .pill{ font-size:10.5px; font-weight:700; padding:4px 10px; border-radius:20px; white-space:nowrap; }
+  .pill.ok{ background:var(--good-soft); color:var(--good); }
+  .pill.warn{ background:var(--warn-soft); color:var(--warn); }
+  .pill.bad{ background:var(--bad-soft); color:var(--bad); }
+
+  .plan-card{ display:flex; align-items:center; justify-content:space-between; }
+  .plan-icon{ width:44px; height:44px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+  .plan-name{ font-size:14px; font-weight:700; color:var(--ink); margin:0; }
+  .plan-meta{ font-size:11.5px; color:var(--ink-soft); margin:2px 0 0; }
+  .plan-price{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14px; color:var(--ink); text-align:right; }
+  .plan-price small{ display:block; font-size:9.5px; color:var(--ink-faint); font-weight:500; }
+
+  .search-bar{
+    display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--line);
+    border-radius:13px; padding:11px 14px; margin-bottom:14px; box-shadow:var(--shadow);
+  }
+  .search-bar input{ border:none; outline:none; flex:1; font-size:13.5px; font-family:'Inter',sans-serif; background:transparent; color:var(--ink); }
+  .search-bar input::placeholder{ color:var(--ink-faint); }
+  .search-bar svg{ width:16px; height:16px; color:var(--ink-faint); flex-shrink:0; }
+
+  .filter-row{ display:flex; gap:8px; margin-bottom:16px; overflow-x:auto; padding-bottom:2px; }
+  .filter-chip{ padding:7px 15px; border-radius:20px; font-size:12px; font-weight:600; background:var(--card); border:1px solid var(--line); color:var(--ink-soft); white-space:nowrap; cursor:pointer; }
+  .filter-chip.active{ background:var(--accent-grad); color:#fff; border-color:transparent; }
+
+  .fab{
+    position:absolute; right:20px; bottom:92px; z-index:30;
+    width:56px; height:56px; border-radius:50%;
+    background:var(--accent-grad);
+    display:flex; align-items:center; justify-content:center; color:#fff;
+    box-shadow:0 12px 26px rgba(255,90,60,0.42); border:none; cursor:pointer;
+  }
+
+  .bottom-nav{
+    position:sticky; bottom:0; z-index:25;
+    display:flex; justify-content:space-around; align-items:center;
+    padding:10px 8px calc(10px + env(safe-area-inset-bottom));
+    background:rgba(23,27,34,0.92); backdrop-filter:blur(14px);
+    border-top:1px solid var(--line);
+  }
+  .nav-item{ display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--ink-faint); font-size:10px; font-weight:600; background:none; border:none; padding:4px 10px; cursor:pointer;}
+  .nav-item.active{ color:var(--accent); }
+  .nav-icon{ width:21px; height:21px; }
+
+  .hidden{ display:none !important; }
+
+  /* ---- member detail page ---- */
+  #page-detail{ padding-top:0; }
+  .detail-header{
+    background:radial-gradient(120% 140% at 15% 0%,#22181A 0%,#171A20 45%,#12151B 100%);
+    padding:16px 18px 20px; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:15;
+  }
+  .back-row{ display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+  .back-btn{ width:34px; height:34px; border-radius:50%; background:var(--card-2); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer; }
+  .back-row .btitle{ font-size:12px; color:var(--ink-soft); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+  .detail-id{ display:flex; align-items:center; gap:14px; }
+  .detail-name{ font-size:21px; font-weight:600; color:#fff; margin:0; }
+  .detail-sub{ font-size:12.5px; color:var(--ink-soft); margin:5px 0 0; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .quick-actions{ display:flex; gap:8px; margin-top:14px; }
+  .qa-btn{ flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 6px; border-radius:var(--radius-sm); background:var(--card-2); border:1px solid var(--line); color:#fff; font-size:12px; font-weight:600; cursor:pointer; text-decoration:none; }
+  .qa-btn svg{ width:14px; height:14px; }
+  .qa-btn.wa{ color:#2FD98A; }
+
+  .seg{ display:flex; margin:16px 18px 0; background:var(--card); border:1px solid var(--line); border-radius:13px; padding:4px; }
+  .segi{ flex:1; text-align:center; padding:9px 4px; font-size:12.5px; font-weight:700; color:var(--ink-soft); border-radius:9px; cursor:pointer; }
+  .segi.active{ background:var(--accent-grad); color:#fff; }
+
+  .detail-body{ padding:16px 18px 100px; }
+  .tab-pane{ display:none; }
+  .tab-pane.active{ display:block; animation:fadein .25s ease; }
+
+  .info-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:6px;}
+  .info-cell .ilabel{ font-size:10.5px; color:var(--ink-soft); font-weight:600; text-transform:uppercase; letter-spacing:0.4px; }
+  .info-cell .ival{ font-size:13.5px; font-weight:700; color:var(--ink); margin-top:4px; }
+
+  .field-label{ font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.4px; margin-bottom:7px; display:block;}
+  .input{ width:100%; padding:12px 14px; border-radius:var(--radius-sm); border:1.5px solid var(--line); background:var(--bg-elev); font-size:14px; margin-bottom:14px; outline:none; font-family:'Inter',sans-serif; color:var(--ink); }
+  .input:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  textarea.input{ resize:vertical; min-height:84px; line-height:1.5; }
+  .chip-row{ display:flex; gap:8px; margin-bottom:6px; flex-wrap:wrap; }
+  .chip{ flex:1; min-width:70px; text-align:center; padding:10px 4px; border-radius:var(--radius-sm); font-size:12.5px; font-weight:600; color:var(--ink-soft); background:var(--bg-elev); border:1.5px solid var(--line); cursor:pointer; }
+  .chip.selected{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent-2); }
+
+  .amount-display{ display:flex; align-items:baseline; gap:2px; margin:2px 0 16px; padding:18px; border-radius:var(--radius-md); background:var(--bg-elev); border:1px solid var(--line); }
+  .amount-display .cur{ font-size:17px; color:var(--accent-2); font-weight:700; }
+  .amount-display input{ background:transparent; border:none; outline:none; color:#fff; font-family:'JetBrains Mono',monospace; font-size:25px; font-weight:700; width:100%; }
+
+  .btn-primary{ width:100%; padding:14px; border:none; border-radius:var(--radius-sm); background:var(--accent-grad); color:#fff; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 10px 22px rgba(255,90,60,0.32); margin-top:6px;}
+  .btn-ghost{ flex:1; padding:12px; border-radius:var(--radius-sm); background:var(--card-2); border:1.5px solid var(--line); color:var(--ink); font-size:13px; font-weight:700; cursor:pointer; }
+  .btn-dark{ flex:1; padding:12px; border-radius:var(--radius-sm); background:var(--accent-grad); color:#fff; border:none; font-size:13px; font-weight:700; cursor:pointer;}
+  .btn-outline{ width:100%; padding:12px; border-radius:var(--radius-sm); background:transparent; border:1.5px dashed var(--line); color:var(--ink-soft); font-size:13px; font-weight:700; cursor:pointer; }
+
+  .history-item{ display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--line); }
+  .history-item:last-child{ border-bottom:none; }
+  .history-item .hl{ font-size:13px; font-weight:600; color:var(--ink); }
+  .history-item .hs{ font-size:11px; color:var(--ink-soft); margin-top:2px; }
+  .history-item .hv{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:13.5px; color:var(--good); }
+
+  .diet-card .dtitle{ font-size:14px; font-weight:700; color:var(--ink); margin:0; }
+  .diet-card .ddate{ font-size:10.5px; color:var(--ink-faint); margin:2px 0 8px; }
+  .diet-card .dbody{ font-size:12.5px; color:var(--ink-soft); line-height:1.6; white-space:pre-line; margin:0 0 12px; }
+  .diet-actions{ display:flex; gap:8px; }
+  .diet-actions button{ flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px; border-radius:var(--radius-sm); font-size:12px; font-weight:700; cursor:pointer; }
+  .diet-actions .share-btn{ background:var(--good-soft); color:var(--good); border:1px solid rgba(47,217,138,0.25); }
+  .diet-actions .del-btn{ background:var(--bad-soft); color:var(--bad); border:1px solid rgba(255,77,109,0.25); }
+
+  .empty-state{ text-align:center; padding:34px 12px; color:var(--ink-faint); }
+  .empty-state svg{ width:38px; height:38px; margin-bottom:10px; opacity:0.5; }
+  .empty-state p{ font-size:12.5px; margin:0; }
+
+  /* ---- bottom sheet ---- */
+  .sheet-overlay{
+    position:fixed; inset:0; background:rgba(5,6,10,0.6); z-index:100;
+    display:none; align-items:flex-end; justify-content:center;
+  }
+  .sheet-overlay.open{ display:flex; }
+  .sheet{
+    width:100%; max-width:440px; background:var(--bg); border-radius:24px 24px 0 0;
+    max-height:90vh; overflow-y:auto; padding-bottom:26px;
+    animation:slideup .3s ease; border:1px solid var(--line); border-bottom:none;
+  }
+  @keyframes slideup{ from{transform:translateY(30px); opacity:0;} to{transform:translateY(0); opacity:1;} }
+  .sheet-handle{ width:36px; height:4px; background:var(--line); border-radius:4px; margin:12px auto 4px; }
+  .sheet-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 20px 6px; }
+  .sheet-head h3{ font-size:16px; font-weight:700; margin:0; color:var(--ink); }
+  .sheet-close{ width:28px; height:28px; border-radius:50%; background:var(--card-2); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink-soft); }
+  .sheet-content{ padding:16px 20px 4px; }
+
+  .receipt{ position:relative; background:var(--card-2); border-radius:var(--radius-md); padding:20px 18px 16px; border:1px solid var(--line); }
+  .receipt::after{ content:""; position:absolute; left:14px; right:14px; bottom:18px; border-bottom:2px dashed var(--line); }
+  .stamp{ position:absolute; top:14px; right:16px; border:2px solid var(--good); color:var(--good); font-family:'Oswald',sans-serif; font-size:12px; letter-spacing:1px; padding:4px 9px; border-radius:6px; transform:rotate(8deg); }
+  .rtitle{ font-weight:700; font-size:16px; margin:0; color:var(--ink); }
+  .rid{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--ink-faint); margin:2px 0 12px;}
+  .rline{ display:flex; justify-content:space-between; padding:5px 0; font-size:12.5px; }
+  .rline .k{ color:var(--ink-soft); } .rline .v{ color:var(--ink); font-weight:600; }
+  .rtotal{ display:flex; justify-content:space-between; align-items:center; padding-top:14px; margin-top:6px; }
+  .rtotal .k{ font-size:13px; font-weight:700; color:var(--ink); } .rtotal .v{ font-family:'JetBrains Mono',monospace; font-size:19px; font-weight:800; color:var(--accent-2); }
+  .receipt-actions{ display:flex; gap:10px; margin-top:16px; }
+
+  /* ---- payment success receipt (v2) ---- */
+  .success-icon{ width:80px; height:80px; border-radius:22px; background:var(--accent-soft); border:1px solid rgba(255,90,60,0.4); display:flex; align-items:center; justify-content:center; margin:8px auto 18px; box-shadow:0 0 30px rgba(255,90,60,0.35); }
+  .success-icon svg{ width:36px; height:36px; color:var(--accent-2); }
+  .receipt-title{ font-family:'Oswald',sans-serif; font-size:23px; font-weight:600; color:#fff; text-align:center; margin:0 0 6px; }
+  .receipt-sub{ font-size:12.5px; color:var(--ink-soft); text-align:center; margin:0 0 20px; line-height:1.5; }
+  .amount-hero{ text-align:center; padding:4px 0 16px; border-bottom:1px solid var(--line); margin-bottom:4px; }
+  .amount-hero .al{ font-size:11px; color:var(--ink-soft); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+  .amount-hero .av{ font-family:'JetBrains Mono',monospace; font-size:29px; font-weight:800; color:var(--accent-2); margin-top:5px; }
+  .rrow{ padding:11px 0; border-bottom:1px solid var(--line); }
+  .rrow:last-child{ border-bottom:none; }
+  .rrow .rl{ font-size:10.5px; color:var(--ink-soft); font-weight:600; text-transform:uppercase; letter-spacing:0.4px; }
+  .rrow .rv{ font-size:14px; font-weight:700; color:var(--ink); margin-top:4px; }
+  .expiry-pill{ display:inline-block; background:var(--good-soft); color:var(--good); font-family:'JetBrains Mono',monospace; font-weight:700; font-size:13px; padding:6px 12px; border-radius:9px; margin-top:5px; }
+  .btn-block{ width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:var(--radius-sm); font-size:14px; font-weight:700; cursor:pointer; margin-top:10px; }
+  .btn-block svg{ width:16px; height:16px; }
+  .btn-block.outline{ background:transparent; border:1.5px solid var(--line); color:#fff; }
+  .btn-block.filled{ background:var(--accent-grad); border:none; color:#fff; box-shadow:0 10px 24px rgba(255,90,60,0.35); }
+  .link-return{ display:block; text-align:center; margin-top:14px; color:var(--ink-soft); font-size:13px; font-weight:600; background:none; border:none; cursor:pointer; width:100%; padding:8px; }
+
+  .month-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:6px; }
+  .month-chip{ padding:10px 4px; text-align:center; border-radius:var(--radius-sm); background:var(--bg-elev); border:1.5px solid var(--line); font-size:12px; font-weight:600; color:var(--ink-soft); cursor:pointer; }
+  .month-chip.selected{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent-2); }
+
+  .toast{
+    position:fixed; left:50%; bottom:26px; transform:translate(-50%,20px); z-index:200;
+    background:var(--card-2); color:var(--ink); border:1px solid var(--line); padding:12px 18px;
+    border-radius:30px; font-size:13px; font-weight:600; box-shadow:var(--shadow);
+    display:flex; align-items:center; gap:8px; opacity:0; pointer-events:none; transition:all .28s ease;
+    max-width:88%;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%,0); }
+  .toast .tdot{ width:8px; height:8px; border-radius:50%; background:var(--good); flex-shrink:0; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <header id="mainHeader">
+    <div class="top-row">
+      <div class="brand" onclick="editGymName()" style="cursor:pointer;" title="Tap to rename your gym"><div class="mark" id="brandMark">IL</div><div class="name" id="brandName">IronLog</div></div>
+      <div class="avatar-sm">AD</div>
+    </div>
+    <p class="greet">Nagercoil branch · Thu, 20 Aug</p>
+    <p class="greet-name">Members</p>
+  </header>
+
+  <!-- MEMBERS (default / first page) -->
+  <div class="page active" id="page-members">
+    <div class="stat-grid">
+      <div class="stat-card"><div class="slabel">Total members</div><div class="sval" id="statTotal">0</div><div class="strend up">▲ active roster</div></div>
+      <div class="stat-card"><div class="slabel">Today's collection</div><div class="sval">₹0</div><div class="strend up">▲ live</div></div>
+    </div>
+    <div class="search-bar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="memberSearch" placeholder="Search by name, phone or place"></div>
+    <div class="filter-row" id="memberFilters">
+      <div class="filter-chip active" data-f="all">All</div>
+      <div class="filter-chip" data-f="ok">Active</div>
+      <div class="filter-chip" data-f="warn">Due soon</div>
+      <div class="filter-chip" data-f="bad">Expired</div>
+    </div>
+    <div id="members-list"></div>
+  </div>
+
+  <!-- PLANS -->
+  <div class="page" id="page-plans">
+    <div class="section-head" style="margin-top:4px;"><h3>Membership plans</h3></div>
+    <div id="plans-list"></div>
+  </div>
+
+  <!-- DUES -->
+  <div class="page" id="page-dues">
+    <div class="section-head" style="margin-top:4px;"><h3>Due for renewal</h3></div>
+    <div id="dues-list"></div>
+  </div>
+
+  <!-- STATS -->
+  <div class="page" id="page-stats">
+    <div class="section-head" style="margin-top:4px;"><h3>Gym overview</h3></div>
+    <div class="stat-grid" style="margin-top:0;">
+      <div class="stat-card"><div class="slabel">Active</div><div class="sval" id="statActive">0</div><div class="strend up">▲ paid up</div></div>
+      <div class="stat-card"><div class="slabel">Due soon</div><div class="sval" id="statWarn">0</div><div class="strend down">▼ follow up</div></div>
+      <div class="stat-card"><div class="slabel">Expired</div><div class="sval" id="statBad">0</div><div class="strend down">▼ lapsed</div></div>
+      <div class="stat-card"><div class="slabel">Renewal rate</div><div class="sval">92%</div><div class="strend up">▲ 3pts</div></div>
+    </div>
+    <div class="section-head"><h3>Popular plans</h3></div>
+    <div id="stats-plans"></div>
+  </div>
+
+  <!-- MEMBER DETAIL (pushed page) -->
+  <div class="page" id="page-detail">
+    <div class="detail-header">
+      <div class="back-row">
+        <button class="back-btn" onclick="closeDetail()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <span class="btitle">Member profile</span>
+      </div>
+      <div class="detail-id">
+        <div class="ring lg" id="dRing"><div class="ring-inner"><div class="avatar" id="dAvatar" style="width:68px;height:68px;font-size:20px;"></div></div></div>
+        <div style="flex:1;min-width:0;">
+          <p class="detail-name" id="dName">—</p>
+          <p class="detail-sub"><span id="dPhone"></span><span class="dot" style="width:3px;height:3px;border-radius:50%;background:var(--ink-faint);display:inline-block;"></span><span id="dPlace"></span></p>
+          <p class="detail-sub"><span class="pill" id="dPill"></span>&nbsp;<span id="dPlan"></span></p>
+        </div>
+      </div>
+      <div class="quick-actions">
+        <a class="qa-btn" id="dCall" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.68 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.32 1.85.55 2.81.68A2 2 0 0 1 22 16.92z"/></svg>Call</a>
+        <a class="qa-btn wa" id="dWhatsapp" href="#" target="_blank"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.5-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.3-.5.1-.2 0-.4 0-.5C10.1 9 9.5 7.6 9.3 7c-.2-.5-.4-.5-.6-.5h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4s1 2.8 1.1 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.3-.1-.2-.3-.3-.6-.4z"/><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>WhatsApp</a>
+        <button class="qa-btn" onclick="openEditMember()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>Edit</button>
+      </div>
+    </div>
+
+    <div class="seg" id="detailSeg">
+      <div class="segi active" data-t="overview">Overview</div>
+      <div class="segi" data-t="fees">Fees</div>
+      <div class="segi" data-t="diet">Diet</div>
+    </div>
+
+    <div class="detail-body">
+      <!-- OVERVIEW -->
+      <div class="tab-pane active" id="tab-overview">
+        <div class="card">
+          <div class="info-grid">
+            <div class="info-cell"><div class="ilabel">Plan</div><div class="ival" id="ovPlan">—</div></div>
+            <div class="info-cell"><div class="ilabel">Status</div><div class="ival" id="ovStatus">—</div></div>
+            <div class="info-cell"><div class="ilabel">Joined</div><div class="ival" id="ovJoined">—</div></div>
+            <div class="info-cell"><div class="ilabel">Valid till</div><div class="ival" id="ovExpiry">—</div></div>
+          </div>
+        </div>
+        <div class="section-head" style="margin-top:18px;"><h3>Recent payments</h3><a href="#" onclick="switchDetailTab('fees');return false;">See all</a></div>
+        <div id="ovFees"></div>
+      </div>
+
+      <!-- FEES -->
+      <div class="tab-pane" id="tab-fees">
+        <div class="card">
+          <span class="field-label">Fee type</span>
+          <div class="chip-row" id="feeTypeRow">
+            <div class="chip selected" data-ft="day">Day based</div>
+            <div class="chip" data-ft="month">Month based</div>
+          </div>
+          <div id="dayQtyWrap">
+            <span class="field-label" style="margin-top:10px;">No. of days</span>
+            <input class="input" id="feeQty" type="number" min="1" value="30">
+          </div>
+          <div id="monthGridWrap" style="display:none;">
+            <span class="field-label" style="margin-top:10px;">Select the month(s) you're paying for</span>
+            <div class="month-grid" id="monthGrid"></div>
+          </div>
+          <span class="field-label">Amount</span>
+          <div class="amount-display"><span class="cur">₹</span><input id="feeAmount" type="text" value="0"></div>
+          <span class="field-label">Payment mode</span>
+          <div class="chip-row" id="feeModeRow">
+            <div class="chip selected" data-fm="Cash">Cash</div>
+            <div class="chip" data-fm="UPI">UPI</div>
+            <div class="chip" data-fm="Card">Card</div>
+            <div class="chip" data-fm="Bank">Bank</div>
+          </div>
+          <button class="btn-primary" onclick="collectFee()">Collect payment &amp; generate receipt</button>
+        </div>
+        <div class="section-head"><h3>Payment history</h3></div>
+        <div id="feeHistory"></div>
+      </div>
+
+      <!-- DIET -->
+      <div class="tab-pane" id="tab-diet">
+        <button class="btn-outline" id="dietAddToggle" onclick="toggleDietForm()">+ Add diet plan</button>
+        <div class="card" id="dietForm" style="display:none; margin-top:12px;">
+          <span class="field-label">Plan title</span>
+          <input class="input" id="dietTitle" type="text" placeholder="e.g. Weight loss — Week 1">
+          <span class="field-label">Meals &amp; items</span>
+          <textarea class="input" id="dietBody" placeholder="Breakfast: Oats + boiled eggs&#10;Lunch: Brown rice + dal + veg&#10;Snacks: Fruits / nuts&#10;Dinner: Grilled chicken + salad"></textarea>
+          <span class="field-label">Notes (optional)</span>
+          <input class="input" id="dietNotes" type="text" placeholder="e.g. Drink 3L water daily">
+          <button class="btn-primary" onclick="saveDiet()">Save diet plan</button>
+        </div>
+        <div id="dietList" style="margin-top:14px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="fab" id="fab" onclick="openAddMember()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></button>
+
+  <div class="bottom-nav" id="bottomNav">
+    <button class="nav-item active" data-page="members" onclick="switchPage('members')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.5-4 4.5-6 7-6s5.5 2 7 6"/></svg>Members</button>
+    <button class="nav-item" data-page="plans" onclick="switchPage('plans')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 10h8M8 14h5"/></svg>Plans</button>
+    <button class="nav-item" data-page="dues" onclick="switchPage('dues')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg>Dues</button>
+    <button class="nav-item" data-page="stats" onclick="switchPage('stats')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>Stats</button>
+  </div>
+</div>
+
+<!-- ADD MEMBER SHEET -->
+<div class="sheet-overlay" id="addSheetOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><h3 id="addSheetTitle">Add new member</h3><div class="sheet-close" onclick="closeAddSheet()">✕</div></div>
+    <div class="sheet-content">
+      <span class="field-label">Full name</span>
+      <input class="input" id="newName" type="text" placeholder="e.g. Suresh Kannan">
+      <span class="field-label">Phone number</span>
+      <input class="input" id="newPhone" type="tel" placeholder="e.g. 9876543210">
+      <span class="field-label">Place</span>
+      <input class="input" id="newPlace" type="text" placeholder="e.g. Nagercoil">
+      <span class="field-label">Plan</span>
+      <div class="chip-row" id="newPlanRow"></div>
+      <button class="btn-primary" onclick="saveNewMember()">Save member</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECEIPT SHEET -->
+<div class="sheet-overlay" id="receiptOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><h3>Payment receipt</h3><div class="sheet-close" onclick="closeReceipt()">✕</div></div>
+    <div class="sheet-content" id="receiptContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="tdot"></span><span id="toastMsg"></span></div>
+
+<script>
+  // ---------------- DATA ----------------
+  var plans = [
+    {id:'gold', name:"Gold strength", meta:"6 months · Strength focus", price:6500, months:6, dayRate:250, monthRate:1100, icon:"🥇", bg:"#332614", fg:"#FFB020"},
+    {id:'silver', name:"Silver basic", meta:"3 months · Gym floor only", price:2500, months:3, dayRate:150, monthRate:850, icon:"🥈", bg:"#1D2230", fg:"#8FA0FF"},
+    {id:'platinum', name:"Platinum elite", meta:"12 months · Full access + PT", price:12000, months:12, dayRate:450, monthRate:1500, icon:"🏆", bg:"#153027", fg:"#2FD98A"}
+  ];
+
+  var members = [
+    {id:1, name:"Ravi Kumar", phone:"9894312045", place:"Nagercoil", initials:"RK", color:"#FF5A3C", planId:'gold', status:"warn", expiry:"21 Aug 2026", joined:"14 Feb 2026", pct:"22%",
+      fees:[{date:"22 Feb 2026", label:"New membership", mode:"UPI", amount:6500}], diet:[]},
+    {id:2, name:"Priya Sundaram", phone:"9843209871", place:"Marthandam", initials:"PS", color:"#7C74F1", planId:'platinum', status:"ok", expiry:"12 Dec 2026", joined:"12 Dec 2025", pct:"88%",
+      fees:[{date:"12 Dec 2025", label:"New membership", mode:"Card", amount:12000}],
+      diet:[{title:"Muscle gain — Phase 1", date:"03 Aug 2026", body:"Breakfast: 4 egg whites + oats\nLunch: Brown rice + chicken + veg\nSnacks: Peanut butter shake\nDinner: Grilled fish + salad", notes:"Drink 3L water daily"}]},
+    {id:3, name:"Arun Murugan", phone:"9787765432", place:"Nagercoil", initials:"AM", color:"#FF4D6D", planId:'silver', status:"bad", expiry:"17 Aug 2026", joined:"17 May 2026", pct:"6%",
+      fees:[{date:"17 May 2026", label:"New membership", mode:"Cash", amount:2500}], diet:[]},
+    {id:4, name:"Divya Rajan", phone:"9865123478", place:"Colachel", initials:"DR", color:"#2FD98A", planId:'gold', status:"ok", expiry:"04 Nov 2026", joined:"04 May 2026", pct:"78%",
+      fees:[{date:"04 May 2026", label:"New membership", mode:"UPI", amount:6500}],
+      diet:[{title:"Fat loss — Week 2", date:"10 Aug 2026", body:"Breakfast: Oats + boiled eggs\nLunch: Millet + dal + veg\nSnacks: Fruits / nuts\nDinner: Grilled chicken + salad", notes:"No rice after 7pm"}]},
+    {id:5, name:"Karthik Babu", phone:"9791234567", place:"Thuckalay", initials:"KB", color:"#FFB020", planId:'silver', status:"warn", expiry:"25 Aug 2026", joined:"25 Feb 2026", pct:"31%",
+      fees:[{date:"25 Feb 2026", label:"New membership", mode:"Cash", amount:2500}], diet:[]},
+    {id:6, name:"Meena Iyer", phone:"9944556677", place:"Nagercoil", initials:"MI", color:"#8FA0FF", planId:'platinum', status:"ok", expiry:"30 Jan 2027", joined:"30 Jan 2026", pct:"95%",
+      fees:[{date:"30 Jan 2026", label:"New membership", mode:"UPI", amount:12000}], diet:[]}
+  ];
+
+  var receiptCounter = 10482;
+  var currentMemberId = null;
+  var memberFilter = 'all';
+  var newMemberPlanId = 'gold';
+
+  function planById(id){ for(var i=0;i<plans.length;i++){ if(plans[i].id===id) return plans[i]; } return plans[0]; }
+  function fmtMoney(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
+  function ringColor(status){ return status==='ok' ? 'var(--good)' : (status==='warn' ? 'var(--warn)' : 'var(--bad)'); }
+  function pillHtml(status){
+    var cls = status==='ok' ? 'ok' : (status==='warn' ? 'warn' : 'bad');
+    var label = status==='ok' ? 'Active' : (status==='warn' ? 'Due soon' : 'Expired');
+    return '<span class="pill '+cls+'">'+label+'</span>';
+  }
+  function showToast(msg){
+    var t = document.getElementById('toast');
+    document.getElementById('toastMsg').innerText = msg;
+    t.classList.add('show');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2600);
+  }
+
+  // ---------------- RENDER: MEMBERS LIST ----------------
+  function renderMembers(){
+    var q = (document.getElementById('memberSearch').value || '').toLowerCase().trim();
+    var list = members.filter(function(m){
+      var matchesFilter = memberFilter==='all' || m.status===memberFilter;
+      var matchesQ = !q || m.name.toLowerCase().indexOf(q)>-1 || m.phone.indexOf(q)>-1 || m.place.toLowerCase().indexOf(q)>-1;
+      return matchesFilter && matchesQ;
+    });
+    var html = '';
+    if(list.length===0){
+      html = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.5-4 4.5-6 7-6s5.5 2 7 6"/></svg><p>No members match this search.</p></div>';
+    } else {
+      list.forEach(function(m){
+        var plan = planById(m.planId);
+        html += '<div class="card member-row" onclick="openDetail('+m.id+')">' +
+          '<div class="ring" style="--pct:'+m.pct+'; --ring-color:'+ringColor(m.status)+';"><div class="ring-inner"><div class="avatar" style="background:'+m.color+'">'+m.initials+'</div></div></div>' +
+          '<div class="member-info"><p class="mname">'+m.name+'</p><p class="mmeta">'+m.phone+'<span class="dot"></span>'+m.place+'<span class="dot"></span>'+plan.name+'</p></div>' +
+          pillHtml(m.status) +
+          '<svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>' +
+          '</div>';
+      });
+    }
+    document.getElementById('members-list').innerHTML = html;
+    document.getElementById('statTotal').innerText = members.length;
+  }
+
+  function renderPlansList(target, list){
+    var html = '';
+    list.forEach(function(p){
+      html += '<div class="card plan-card">' +
+        '<div style="display:flex;align-items:center;gap:12px;">' +
+        '<div class="plan-icon" style="background:'+p.bg+';">'+p.icon+'</div>' +
+        '<div><p class="plan-name">'+p.name+'</p><p class="plan-meta">'+p.meta+'</p></div></div>' +
+        '<div class="plan-price">'+fmtMoney(p.price)+'<small>/ '+p.months+' mo</small></div></div>';
+    });
+    document.getElementById(target).innerHTML = html;
+  }
+
+  function renderDues(){
+    var due = members.filter(function(m){ return m.status!=='ok'; });
+    var html = '';
+    if(due.length===0){
+      html = '<div class="empty-state"><p>Nobody is due for renewal right now.</p></div>';
+    } else {
+      due.forEach(function(m){
+        var plan = planById(m.planId);
+        html += '<div class="card member-row" onclick="openDetail('+m.id+', \'fees\')">' +
+          '<div class="ring" style="--pct:'+m.pct+'; --ring-color:'+ringColor(m.status)+';"><div class="ring-inner"><div class="avatar" style="background:'+m.color+'">'+m.initials+'</div></div></div>' +
+          '<div class="member-info"><p class="mname">'+m.name+'</p><p class="mmeta">'+plan.name+'<span class="dot"></span>Valid till '+m.expiry+'</p></div>' +
+          pillHtml(m.status) + '</div>';
+      });
+    }
+    document.getElementById('dues-list').innerHTML = html;
+  }
+
+  function renderStats(){
+    document.getElementById('statActive').innerText = members.filter(function(m){return m.status==='ok';}).length;
+    document.getElementById('statWarn').innerText = members.filter(function(m){return m.status==='warn';}).length;
+    document.getElementById('statBad').innerText = members.filter(function(m){return m.status==='bad';}).length;
+    renderPlansList('stats-plans', plans);
+  }
+
+  // ---------------- PAGE / NAV ----------------
+  function switchPage(p){
+    document.querySelectorAll('.page').forEach(function(el){ el.classList.remove('active'); });
+    document.getElementById('page-'+p).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(function(el){ el.classList.toggle('active', el.dataset.page===p); });
+    if(p==='dues') renderDues();
+    if(p==='stats') renderStats();
+    if(p==='plans') renderPlansList('plans-list', plans);
+  }
+
+  // ---------------- MEMBER DETAIL ----------------
+  function openDetail(id, tab){
+    currentMemberId = id;
+    var m = members.filter(function(x){return x.id===id;})[0];
+    if(!m) return;
+    var plan = planById(m.planId);
+    document.getElementById('dAvatar').style.background = m.color;
+    document.getElementById('dAvatar').innerText = m.initials;
+    document.getElementById('dRing').style.setProperty('--pct', m.pct);
+    document.getElementById('dRing').style.setProperty('--ring-color', ringColor(m.status));
+    document.getElementById('dName').innerText = m.name;
+    document.getElementById('dPhone').innerText = m.phone;
+    document.getElementById('dPlace').innerText = m.place;
+    document.getElementById('dPill').outerHTML = pillHtml(m.status).replace('class="pill','id="dPill" class="pill');
+    document.getElementById('dPlan').innerText = plan.name;
+    document.getElementById('dCall').href = 'tel:' + m.phone;
+    document.getElementById('dWhatsapp').href = 'https://wa.me/91' + m.phone;
+
+    document.getElementById('ovPlan').innerText = plan.name;
+    document.getElementById('ovStatus').innerText = m.status==='ok'?'Active':(m.status==='warn'?'Due soon':'Expired');
+    document.getElementById('ovJoined').innerText = m.joined;
+    document.getElementById('ovExpiry').innerText = m.expiry;
+
+    renderFeeHistory(m);
+    renderDietList(m);
+    resetFeeForm(m);
+
+    document.querySelectorAll('.page').forEach(function(el){ el.classList.remove('active'); });
+    document.getElementById('page-detail').classList.add('active');
+    document.getElementById('bottomNav').classList.add('hidden');
+    document.getElementById('fab').classList.add('hidden');
+    document.getElementById('mainHeader').classList.add('hidden');
+
+    switchDetailTab(tab || 'overview');
+    window.scrollTo(0,0);
+  }
+
+  function closeDetail(){
+    document.getElementById('page-detail').classList.remove('active');
+    document.getElementById('bottomNav').classList.remove('hidden');
+    document.getElementById('fab').classList.remove('hidden');
+    document.getElementById('mainHeader').classList.remove('hidden');
+    switchPage('members');
+    renderMembers();
+  }
+
+  function switchDetailTab(t){
+    document.querySelectorAll('#detailSeg .segi').forEach(function(el){ el.classList.toggle('active', el.dataset.t===t); });
+    document.querySelectorAll('.tab-pane').forEach(function(el){ el.classList.remove('active'); });
+    document.getElementById('tab-'+t).classList.add('active');
+  }
+  document.getElementById('detailSeg').addEventListener('click', function(e){
+    var el = e.target.closest('.segi');
+    if(el) switchDetailTab(el.dataset.t);
+  });
+
+  function openEditMember(){ showToast('Edit member — coming soon'); }
+
+  // ---------------- FEES ----------------
+  var feeState = {type:'day', months:[]};
+  var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  function renderMonthGrid(){
+    var today = new Date();
+    var html = '';
+    for(var i=0;i<12;i++){
+      var d = new Date(today.getFullYear(), today.getMonth()+i, 1);
+      var label = monthNames[d.getMonth()] + " '" + String(d.getFullYear()).slice(2);
+      html += '<div class="month-chip'+(i===0?' selected':'')+'" data-mi="'+i+'" data-label="'+monthNames[d.getMonth()]+' '+d.getFullYear()+'">'+label+'</div>';
+    }
+    document.getElementById('monthGrid').innerHTML = html;
+    feeState.months = [0];
+  }
+  document.getElementById('monthGrid').addEventListener('click', function(e){
+    var el = e.target.closest('.month-chip'); if(!el) return;
+    var idx = Number(el.dataset.mi);
+    el.classList.toggle('selected');
+    var pos = feeState.months.indexOf(idx);
+    if(pos>-1){ feeState.months.splice(pos,1); } else { feeState.months.push(idx); }
+    var m = members.filter(function(x){return x.id===currentMemberId;})[0];
+    var plan = planById(m.planId);
+    document.getElementById('feeAmount').value = Math.max(feeState.months.length,0) * plan.monthRate;
+  });
+
+  function resetFeeForm(m){
+    var plan = planById(m.planId);
+    feeState.type = 'day';
+    document.querySelectorAll('#feeTypeRow .chip').forEach(function(c){ c.classList.toggle('selected', c.dataset.ft==='day'); });
+    document.getElementById('dayQtyWrap').style.display = 'block';
+    document.getElementById('monthGridWrap').style.display = 'none';
+    document.getElementById('feeQty').value = 30;
+    document.getElementById('feeAmount').value = plan.dayRate * 30;
+    document.querySelectorAll('#feeModeRow .chip').forEach(function(c,i){ c.classList.toggle('selected', i===0); });
+    renderMonthGrid();
+  }
+  document.getElementById('feeTypeRow').addEventListener('click', function(e){
+    var el = e.target.closest('.chip'); if(!el) return;
+    document.querySelectorAll('#feeTypeRow .chip').forEach(function(c){ c.classList.remove('selected'); });
+    el.classList.add('selected');
+    feeState.type = el.dataset.ft;
+    var m = members.filter(function(x){return x.id===currentMemberId;})[0];
+    var plan = planById(m.planId);
+    if(feeState.type==='day'){
+      document.getElementById('dayQtyWrap').style.display = 'block';
+      document.getElementById('monthGridWrap').style.display = 'none';
+      document.getElementById('feeQty').value = 30;
+      document.getElementById('feeAmount').value = plan.dayRate * 30;
+    } else {
+      document.getElementById('dayQtyWrap').style.display = 'none';
+      document.getElementById('monthGridWrap').style.display = 'block';
+      renderMonthGrid();
+      document.getElementById('feeAmount').value = plan.monthRate;
+    }
+  });
+  document.getElementById('feeQty').addEventListener('input', function(){
+    var m = members.filter(function(x){return x.id===currentMemberId;})[0];
+    var plan = planById(m.planId);
+    var qty = Number(this.value)||0;
+    document.getElementById('feeAmount').value = qty * plan.dayRate;
+  });
+  document.getElementById('feeModeRow').addEventListener('click', function(e){
+    var el = e.target.closest('.chip'); if(!el) return;
+    document.querySelectorAll('#feeModeRow .chip').forEach(function(c){ c.classList.remove('selected'); });
+    el.classList.add('selected');
+  });
+
+  function renderFeeHistory(m){
+    var html = '';
+    if(!m.fees.length){
+      html = '<div class="empty-state"><p>No payments recorded yet.</p></div>';
+    } else {
+      m.fees.slice().reverse().forEach(function(f){
+        html += '<div class="card"><div class="history-item">' +
+          '<div><div class="hl">'+f.label+'</div><div class="hs">'+f.date+' · '+f.mode+'</div></div>' +
+          '<div class="hv">'+fmtMoney(f.amount)+'</div></div></div>';
+      });
+    }
+    document.getElementById('feeHistory').innerHTML = html;
+    document.getElementById('ovFees').innerHTML = html;
+  }
+
+  function collectFee(){
+    var m = members.filter(function(x){return x.id===currentMemberId;})[0];
+    if(!m) return;
+    var type = feeState.type;
+    var amount = Number(document.getElementById('feeAmount').value)||0;
+    var mode = document.querySelector('#feeModeRow .chip.selected').dataset.fm;
+    var qty, label, monthsAdded;
+
+    if(type==='day'){
+      qty = Number(document.getElementById('feeQty').value)||0;
+      label = qty+'-day renewal';
+      if(qty<=0 || amount<=0){ showToast('Enter a valid amount'); return; }
+    } else {
+      var picked = Array.prototype.slice.call(document.querySelectorAll('#monthGrid .month-chip.selected'))
+        .map(function(el){ return el.dataset.label; });
+      qty = picked.length;
+      monthsAdded = qty;
+      label = qty>0 ? ('Payment for ' + picked.join(', ')) : '';
+      if(qty<=0 || amount<=0){ showToast('Select at least one month'); return; }
+    }
+
+    var today = new Date();
+    var dateStr = today.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+    var timeStr = today.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit', hour12:false});
+    m.fees.push({date:dateStr, label:label, mode:mode, amount:amount});
+
+    var newExpiry = new Date(today);
+    if(type==='day'){ newExpiry.setDate(newExpiry.getDate()+qty); } else { newExpiry.setMonth(newExpiry.getMonth()+qty); }
+    m.expiry = newExpiry.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+    m.status = 'ok'; m.pct = '92%';
+
+    receiptCounter++;
+    var receiptNo = 'TXN-' + receiptCounter + '-' + String.fromCharCode(65+Math.floor(Math.random()*26)) + String.fromCharCode(65+Math.floor(Math.random()*26));
+    var plan = planById(m.planId);
+
+    var receiptHtml =
+      '<div class="success-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.3 2.3 4.7-5.1"/></svg></div>' +
+      '<p class="receipt-title">Payment Successful</p>' +
+      '<p class="receipt-sub">Your transaction has been securely processed.</p>' +
+      '<div class="card">' +
+        '<div class="amount-hero"><div class="al">Amount Paid</div><div class="av">'+fmtMoney(amount)+'</div></div>' +
+        '<div class="rrow"><div class="rl">Member</div><div class="rv">'+m.name+'</div></div>' +
+        '<div class="rrow"><div class="rl">Membership Plan</div><div class="rv">'+plan.name+'</div></div>' +
+        '<div class="rrow"><div class="rl">'+(type==='day'?'Renewal':'Months paid')+'</div><div class="rv">'+label+'</div></div>' +
+        '<div class="rrow"><div class="rl">Payment mode</div><div class="rv">'+mode+'</div></div>' +
+        '<div class="rrow"><div class="rl">Transaction ID</div><div class="rv mono">'+receiptNo+'</div></div>' +
+        '<div class="rrow"><div class="rl">Date &amp; Time</div><div class="rv">'+dateStr+' · '+timeStr+'</div></div>' +
+        '<div class="rrow" style="border-bottom:none;"><div class="rl">New Expiry Date</div><div class="expiry-pill">'+m.expiry+'</div></div>' +
+      '</div>' +
+      '<button class="btn-block outline" onclick="showToast(\'Receipt PDF downloaded\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>Download PDF</button>' +
+      '<button class="btn-block filled" onclick="shareReceipt(\''+m.name.replace(/'/g,"")+'\', \''+receiptNo+'\', \''+plan.name.replace(/'/g,"")+'\', \''+label.replace(/'/g,"")+'\', '+amount+', \''+m.expiry+'\', \''+m.phone+'\')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.5-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.3-.5.1-.2 0-.4 0-.5C10.1 9 9.5 7.6 9.3 7c-.2-.5-.4-.5-.6-.5h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4s1 2.8 1.1 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.3-.1-.2-.3-.3-.6-.4z"/><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>Share via WhatsApp</button>' +
+      '<button class="link-return" onclick="closeReceipt()">Return to Dashboard</button>';
+
+    document.getElementById('receiptContent').innerHTML = receiptHtml;
+    document.getElementById('receiptOverlay').classList.add('open');
+
+    renderFeeHistory(m);
+    resetFeeForm(m);
+    document.getElementById('ovStatus').innerText = 'Active';
+    document.getElementById('ovExpiry').innerText = m.expiry;
+    document.getElementById('dPill').outerHTML = pillHtml(m.status).replace('class="pill','id="dPill" class="pill');
+  }
+
+  function shareReceipt(name, receiptNo, planName, label, amount, expiry, phone){
+    var text = gymName+' Receipt #'+receiptNo+'%0AMember: '+encodeURIComponent(name)+'%0APlan: '+encodeURIComponent(planName)+'%0A'+encodeURIComponent(label)+'%0AAmount paid: ₹'+amount+'%0AValid till: '+encodeURIComponent(expiry)+'%0AThank you for training with us!';
+    window.open('https://wa.me/91'+phone+'?text='+text, '_blank');
+  }
+
+  function closeReceipt(){
+    document.getElementById('receiptOverlay').classList.remove('open');
+    switchPage('members');
+    document.getElementById('page-detail').classList.remove('active');
+    document.getElementById('bottomNav').classList.remove('hidden');
+    document.getElementById('fab').classList.remove('hidden');
+    document.getElementById('mainHeader').classList.remove('hidden');
+    renderMembers();
+  }
+
+  // ---------------- GYM BRANDING (any gym name — demo default shown) ----------------
+  var gymName = 'IronLog';
+  function editGymName(){
+    var next = window.prompt('Gym name (shown on the app header):', gymName);
+    if(next===null) return;
+    next = next.trim();
+    if(!next) return;
+    gymName = next;
+    document.getElementById('brandName').innerText = gymName;
+    var initials = gymName.split(' ').map(function(s){return s[0];}).slice(0,2).join('').toUpperCase();
+    document.getElementById('brandMark').innerText = initials;
+    document.title = gymName + ' — Gym Membership';
+    showToast('Gym name updated');
+  }
+
+  // ---------------- DIET ----------------
+  function toggleDietForm(){
+    var f = document.getElementById('dietForm');
+    var open = f.style.display !== 'none';
+    f.style.display = open ? 'none' : 'block';
+    document.getElementById('dietAddToggle').innerText = open ? '+ Add diet plan' : 'Cancel';
+  }
+
+  function renderDietList(m){
+    var html = '';
+    if(!m.diet.length){
+      html = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 11h16M4 11a8 8 0 0116 0M4 11v7a2 2 0 002 2h12a2 2 0 002-2v-7"/></svg><p>No diet plans yet. Tap "Add diet plan" to create one.</p></div>';
+    } else {
+      m.diet.slice().reverse().forEach(function(d, idx){
+        var realIdx = m.diet.length-1-idx;
+        html += '<div class="card diet-card">' +
+          '<p class="dtitle">'+d.title+'</p>' +
+          '<p class="ddate">Added '+d.date+(d.notes?(' · '+d.notes):'')+'</p>' +
+          '<p class="dbody">'+d.body+'</p>' +
+          '<div class="diet-actions">' +
+          '<button class="share-btn" onclick="shareDiet('+realIdx+')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.5-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.3-.5.1-.2 0-.4 0-.5C10.1 9 9.5 7.6 9.3 7c-.2-.5-.4-.5-.6-.5h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4s1 2.8 1.1 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.3-.1-.2-.3-.3-.6-.4z"/><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>Share</button>' +
+          '<button class="del-btn" onclick="deleteDiet('+realIdx+')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg>Delete</button>' +
+          '</div></div>';
+      });
+    }
+    document.getElementById('dietList').innerHTML = html;
+  }
+
+  function saveDiet(){
+    var title = document.getElementById('dietTitle').value.trim();
+    var body = document.getElementById('dietBody').value.trim();
+    var notes = document.getElementById('dietNotes').value.trim();
+    if(!title || !body){ showToast('Add a title and the meal details'); return; }
+    var m = members.filter(function(x){return x.id===currentMemberId;})[0];
+    var today = new Date().toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+    m.diet.push({title:title, date:today, body:body, notes:notes});
+    document.getElementById('dietTitle').value='';
+    document.getElementById('dietBody').value='';
+    document.getElementById('dietNotes').value='';
+    toggleDietForm();
+    renderDietList(m);
+    showToast('Diet plan saved');
+  }
+
+  function deleteDiet(idx){
+    var m = members.filter(function(x){return x.id===currentMemberId;})[0];
+    m.diet.splice(idx,1);
+    renderDietList(m);
+    showToast('Diet plan removed');
+  }
+
+  function shareDiet(idx){
+    var m = members.filter(function(x){return x.id===currentMemberId;})[0];
+    var d = m.diet[idx];
+    var text = 'Hi '+m.name+', here is your diet plan from IronLog Gym:%0A%0A'+encodeURIComponent(d.title)+'%0A%0A'+encodeURIComponent(d.body)+(d.notes?('%0A%0ANote: '+encodeURIComponent(d.notes)):'');
+    window.open('https://wa.me/91'+m.phone+'?text='+text, '_blank');
+  }
+
+  // ---------------- ADD MEMBER ----------------
+  function renderNewPlanRow(){
+    var html = '';
+    plans.forEach(function(p, i){
+      html += '<div class="chip'+(p.id===newMemberPlanId?' selected':'')+'" data-np="'+p.id+'">'+p.name+'</div>';
+    });
+    document.getElementById('newPlanRow').innerHTML = html;
+  }
+  document.getElementById('newPlanRow') && document.getElementById('newPlanRow').addEventListener('click', function(e){});
+  document.addEventListener('click', function(e){
+    var el = e.target.closest('#newPlanRow .chip');
+    if(el){
+      document.querySelectorAll('#newPlanRow .chip').forEach(function(c){ c.classList.remove('selected'); });
+      el.classList.add('selected');
+      newMemberPlanId = el.dataset.np;
+    }
+  });
+
+  function openAddMember(){
+    newMemberPlanId = 'gold';
+    document.getElementById('newName').value='';
+    document.getElementById('newPhone').value='';
+    document.getElementById('newPlace').value='';
+    renderNewPlanRow();
+    document.getElementById('addSheetOverlay').classList.add('open');
+  }
+  function closeAddSheet(){ document.getElementById('addSheetOverlay').classList.remove('open'); }
+  document.getElementById('addSheetOverlay').addEventListener('click', function(e){ if(e.target===this) closeAddSheet(); });
+  document.getElementById('receiptOverlay').addEventListener('click', function(e){ if(e.target===this) closeReceipt(); });
+
+  var colorPool = ['#FF5A3C','#7C74F1','#2FD98A','#FFB020','#8FA0FF','#FF4D6D','#33C6E0'];
+  function saveNewMember(){
+    var name = document.getElementById('newName').value.trim();
+    var phone = document.getElementById('newPhone').value.trim();
+    var place = document.getElementById('newPlace').value.trim();
+    if(!name || !phone || !place){ showToast('Fill in name, phone and place'); return; }
+    var initials = name.split(' ').map(function(s){return s[0];}).slice(0,2).join('').toUpperCase();
+    var id = members.length ? Math.max.apply(null, members.map(function(m){return m.id;}))+1 : 1;
+    var today = new Date().toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+    var plan = planById(newMemberPlanId);
+    var expiryDate = new Date();
+    expiryDate.setMonth(expiryDate.getMonth()+plan.months);
+    members.push({
+      id:id, name:name, phone:phone, place:place, initials:initials,
+      color:colorPool[members.length % colorPool.length], planId:newMemberPlanId,
+      status:'ok', expiry:expiryDate.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}),
+      joined:today, pct:'96%',
+      fees:[{date:today, label:'New membership', mode:'Cash', amount:plan.price}], diet:[]
+    });
+    closeAddSheet();
+    renderMembers();
+    showToast('Member added');
+  }
+
+  // ---------------- FILTERS / SEARCH ----------------
+  document.getElementById('memberFilters').addEventListener('click', function(e){
+    var el = e.target.closest('.filter-chip'); if(!el) return;
+    document.querySelectorAll('#memberFilters .filter-chip').forEach(function(c){ c.classList.remove('active'); });
+    el.classList.add('active');
+    memberFilter = el.dataset.f;
+    renderMembers();
+  });
+  document.getElementById('memberSearch').addEventListener('input', renderMembers);
+
+  // ---------------- INIT ----------------
+  renderMembers();
+  renderPlansList('plans-list', plans);
+</script>
+</body>
+</html>
